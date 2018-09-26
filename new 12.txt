@@ -1,0 +1,90 @@
+Changes have been made to the Sandbox request 1892, at 23:49:48 on 3/16/18. 
+  DR-183000 Abstract:	Fast Column Add infrastructure & support for non-CP User tables
+  Release:	TD 16.6
+  Run Type:	Functional Testing Only
+  Priority:	Normal
+  Functional Status:	In Progress
+  Performance Status:	N/A
+RA Comments: 
+
+Requester Comments: 
+All the legitimate feature specific backtraces reported in the previous sandbox run are fixed. 
+Following backtraces (numbered as per the earlier report) are seen on the base also, hence not fixed: #7, #29, #30, #49, #50, 68
+Following backtraces are due to diagnostic flag(cannot occur in a real use case), hence not fixed: #61, #62, #63, #64, #72, #73 
+
+This request is with Feature enabled via dbsinternal and forcing all the tests to use the feature via a diagnostic flag.
+
+Instructions:
+1. Following are the new rpms to be installed:
+tdbms-16.60d.00.01dr183000_6-1.x86_64.rpm
+teradata-udfgpl-16.60d.00.01dr183000_6-1.x86_64.rpm
+
+2. After sysinit and DIP are completed, copy the dbsinternal binary(from /var/opt/teradata/sandbox16.60/dr183000/dbsinternal)to /usr/tdbms/bin folder and enable the feature by setting field 556 to true:
+sdlc9306:/usr/tdbms/bin # dbsinternal
+
+The current DBS Control GDO has been read.
+
+Enter a command, HELP, or QUIT:
+m i 556=true
+
+The FastAlterEnable field has been modified from FALSE to TRUE.
+NOTE: This change will become effective after the DBS Control Record
+has been written.
+
+Enter a command, HELP, or QUIT:
+wr
+
+Locking the DBS Control GDO...
+Updating the DBS Control GDO...
+
+
+
+3. Set the following DBS Control internal field:
+dbscontrol
+Enter a command, HELP, or QUIT:
+m i 54 0=700
+
+The SynDiagFlags[0] field has been modified from 0 to 700.
+NOTE: This change will become effective after the next DBS restart.
+
+Restart the DBS
+
+4. Expected error codes due to feature: 4371, 4373, 2897, 5708
+Due to these errors, there could be subsequent mismatches in the test cases.
+
+
+5. Due to a base issue (DR 188518) which impacts FCA due to fastload taking EVL path for building rows, following backtrace is expected :
+libpde.so prgfaultcatch+0x20a prgport.c:2176
+libpthread.so.0 __restore_rt
+libc.so.6 __strstr_sse42+0x8e
+libudt.so StringTokenizer::parseToken+0x4b uucstringtokenizer.cpp:97
+libudt.so StringTokenizer::C2+0xe7 uucstringtokenizer.cpp:53
+libudt.so UdtException::setSrc+0x52 uehudtexception.cpp:82
+libudt.so UdtException::C2+0x48 uehudtexception.cpp:42
+libudt.so SystemUdtException::C2+0x2c uehsystemudtexception.h:48
+libudt.so InternalUdtException::C2+0x2c uehinternaludtexception.h:48
+libudt.so udtArrayException::C2+0x7e udtarrayexception.cpp:22
+libudt.so ArrayUdt::ParseValueString+0x33e udtarrayudt.cpp:4740
+libudt.so ArrayUdt::predefToClass+0xc4 udtarrayudt.cpp:809
+libuci.so uci_predefToClass+0x97 uciwrapper.cpp:2503
++0x7fffa033302b
+libdbs1.so evlinterp+0x4dd evlinterp.c:3091
+libstp.so stplin+0x397e stplin.c:2380
+
+Example PTE test:
+Dataset CDT Enhancements -- Backtrace -- DR188518
+
+6. Some tests may be hung (due to DR 188518/188515 impacting FCA):
+Example PTE tests (if tests are hung please abort the individual test case and continue other cases):
+Geospatial 3D Developer Regression 
+Java Enhancements Distinct UDT By handle 
+Sandbox Comments: 
+TDBMS.16.60d.00.01dr183000_6
+
+nblnx11:/ # /usr/tdbms/bin/dbsinternal ?i
+556. FastAlterEnable = TRUE (default FALSE)
+
+nblnx11:/ # /usr/tdbms/bin/dbscontrol ?i
+54. SynDiagFlags(Decimals) :
+Flag 0 = 700
+Additional details can be viewed at: /Sandbox/show.cfm?SB_ID=1892 
